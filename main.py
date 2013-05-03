@@ -5,6 +5,8 @@
 ##############################################################################
 
 import webapp2
+from StringIO import StringIO
+import csv
 import json
 import time
 import gviz_api
@@ -128,7 +130,20 @@ class MainHandler(webapp2.RequestHandler):
 
         self.response.write('Thanks!')
 
+class DumpHandler(webapp2.RequestHandler):
+    def get(self):
+        buf = StringIO()
+        c = csv.writer(buf)
+        c.writerow(['Time', 'Git Revision', 'Duration', 'Docstring', 'Test ID'])
+        for report in Report.all().run():
+            for test in report.test_set.run():
+                c.writerow([report.time, report.revision, test.duration, test.doc, test.id])
+    
+        self.response.headers['Content-Type'] = 'text/csv'
+        self.response.write(buf.getvalue())
+    
 
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
+    ('/dump', DumpHandler),
 ], debug=True)
